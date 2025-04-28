@@ -1,0 +1,210 @@
+#!/bin/bash
+
+#SBATCH --job-name=CSU-setup-2025
+#SBATCH --nodes=1
+#SBATCH --ntasks=2
+#SBATCH --partition=amilan
+#SBATCH --time=00:10:00
+#SBATCH --mail-type=ALL
+# Removed --mail-user for default behaviour
+
+# Description: This script sets up environment variables, installs necessary software, and prepares your environment for the CSU Summer Workshop 2025.
+# Author: 
+# Date: 
+
+##################################
+##### How to Use this Script #####
+## Run it in the background and look at the output file:
+# sbatch CSU-setup-2025.sh
+# ls -alt | head -n 3
+
+## Run it interactively and watch output in the terminal:
+
+# give permission to execute file
+# chmod 755 CSU-setup-2025.sh
+# acompile
+# ./CSU-setup-2025.sh
+
+## Another way to run interactively with more control:
+# sinteractive --reservation=microbiome --time=1:00:00 --partition=amilan -N 1 -n 1
+##################################
+
+# Initialize Debug Mode to false
+debug_mode=false
+
+# Function Definitions
+
+print_help() {
+    echo "Usage: $0 [options]"
+    echo "-h, --help            Show this help message"
+    echo "-d, --debug           Enable debug mode"
+    echo
+    echo "This script is designed for setting up the CSU Summer Workshop 2025 environment."
+    echo 
+}
+
+# Check for flags
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        -d|--debug) debug_mode=true ;;
+        -h|--help) print_help; exit 0 ;;
+        *) echo "Unknown parameter passed: $1"; exit 1 ;;
+    esac
+    shift
+done
+
+########
+## Verify and Explain Alpine Directories
+########
+echo "-------------------------"
+echo "Learn more about directories and their paths"
+echo "-------------------------"
+echo "Your HOME directory ($HOME) has 2GB in capacity."
+echo "Your PROJECT directory (/project/$USER) has 250GB in capacity."
+echo "Your SCRATCH directory (/scratch/alpine/$USER) has 10TB in capacity. **Files are purged after 90-days of inactivity!**"
+echo "Your temp (TMPDIR) directory ($TMPDIR) is a staging ground for package files and libraries when installing new software."
+# Get the available space on /tmp in gigabytes
+available_space_gb=$(df -h /tmp | awk 'NR==2 {print $4}' | tr -d 'G')
+
+# Set a threshold for available space
+threshold_gb=4
+
+if (( $(echo "$available_space_gb < $threshold_gb" | bc -l) )); then
+  echo "Your /tmp directory is almost full. Available space: $available_space_gb G"
+  new_tmp_directory="/scratch/alpine/$USER"
+  export TMP="$new_tmp_directory"
+  echo "TMP environment variable set to: $new_tmp_directory"
+else
+  echo "Your /tmp directory has sufficient space. Available space: $available_space_gb G"
+fi
+
+echo "Your Workshop directory: /pl/active/courses/2025_summer/CSU_2025"
+
+DIR="/pl/active/courses/2025_summer/CSU_2025"
+
+if [ -r "$DIR" ]; then
+    echo "You have access to the directory $DIR"
+else
+    echo "You do not have access to the directory $DIR"
+fi
+
+echo "#########################"
+
+if [[ "$debug_mode" = true ]]; then
+    echo "#########################"
+    echo "Debug Mode: Displaying .bashrc contents:"
+    cat ~/.bashrc
+    echo "#########################"
+fi
+
+echo ""
+echo "#########################"
+echo "Check if on a login node"
+echo "#########################"
+echo ""
+
+if [[ "$(hostname)" =~ ^login ]]; then
+  echo "You are on a login node, the following script module load test will likely fail."
+  echo "Please type 'acompile' to switch to a compute node."
+else
+  echo "You are not on a login node. Great choice! Now you can run different software modules."
+fi
+
+# Clean up any loaded modules
+module purge
+
+######################################################
+## Setup SparCC3
+######################################################
+
+echo ""
+echo "#########################"
+echo "Setup SparCC3 software"
+echo "#########################"
+echo ""
+
+SPARCC_DIR="/projects/$USER/SparCC3"
+
+if [ -f "$SPARCC_DIR/SparCC.py" ]; then
+    chmod +x "$SPARCC_DIR/SparCC.py"
+
+    if ! grep -qxF "export PATH=\$PATH:$SPARCC_DIR" ~/.bashrc; then
+        echo "export PATH=\$PATH:$SPARCC_DIR" >> ~/.bashrc
+        source ~/.bashrc
+        echo "The directory $SPARCC_DIR has been added to your PATH."
+    else
+        echo "The directory $SPARCC_DIR is already in your PATH."
+    fi
+
+    if command -v SparCC.py &> /dev/null; then
+        echo "Validation successful: SparCC.py is working from any directory."
+    else
+        echo "Validation failed: SparCC.py is not accessible from any directory."
+    fi
+
+else
+    if git clone https://github.com/JCSzamosi/SparCC3.git /projects/$USER/SparCC3; then
+        echo "SparCC3 cloned successfully."
+        chmod +x "$SPARCC_DIR/SparCC.py"
+
+        if ! grep -qxF "export PATH=\$PATH:$SPARCC_DIR" ~/.bashrc; then
+            echo "export PATH=\$PATH:$SPARCC_DIR" >> ~/.bashrc
+            source ~/.bashrc
+            echo "The directory $SPARCC_DIR has been added to your PATH."
+        else
+            echo "The directory $SPARCC_DIR is already in your PATH."
+        fi
+
+        if command -v SparCC.py &> /dev/null; then
+            echo "Validation successful: SparCC.py is working from any directory."
+        else
+            echo "Validation failed: SparCC.py is not accessible from any directory."
+        fi
+
+    else
+        echo "Failed to clone SparCC3 repository. Please ensure you have permission."
+    fi
+fi
+
+######################################################
+## Setup QIIME2 2024.10 Module
+######################################################
+
+echo ""
+echo "#########################"
+echo "Setup QIIME2 software"
+echo "#########################"
+echo ""
+
+echo "Starting an interactive session with 'acompile' is recommended before loading modules."
+echo "Example: acompile --ntasks=4"
+echo ""
+
+# Load QIIME2 module
+module load qiime2/2024.10_amplicon
+
+# Verify if qiime command is available
+if command -v qiime &> /dev/null; then
+    echo "QIIME2 module loaded successfully!"
+    echo "Running 'qiime --help' to verify installation:"
+    qiime --help
+else
+    echo "Failed to load QIIME2 module. Please check module availability or installation."
+fi
+
+echo ""
+echo "Notes:"
+echo "- QIIME2 2024.2 is currently the default version on Alpine."
+echo "- QIIME2 2024.10_amplicon and qiime2/2024.10_amplicon_gg2 are available for manual loading."
+echo "- QIIME2 2025.4 version is being installed and will become available soon."
+
+######################################################
+## End of Script
+######################################################
+
+echo ""
+echo "#########################"
+echo "This is the end of the SETUP script."
+echo "For further support please send your output file to rc2-request@colostate.edu."
+echo "#########################"
+echo ""
