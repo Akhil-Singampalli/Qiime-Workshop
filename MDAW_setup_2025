@@ -110,62 +110,6 @@ else
   echo "You are not on a login node. Great choice! Now you can run different software modules."
 fi
 
-# Clean up any loaded modules
-module purge
-
-######################################################
-## Setup SparCC3
-######################################################
-
-echo ""
-echo "#########################"
-echo "Setup SparCC3 software"
-echo "#########################"
-echo ""
-
-SPARCC_DIR="/projects/$USER/SparCC3"
-
-if [ -f "$SPARCC_DIR/SparCC.py" ]; then
-    chmod +x "$SPARCC_DIR/SparCC.py"
-
-    if ! grep -qxF "export PATH=\$PATH:$SPARCC_DIR" ~/.bashrc; then
-        echo "export PATH=\$PATH:$SPARCC_DIR" >> ~/.bashrc
-        source ~/.bashrc
-        echo "The directory $SPARCC_DIR has been added to your PATH."
-    else
-        echo "The directory $SPARCC_DIR is already in your PATH."
-    fi
-
-    if command -v SparCC.py &> /dev/null; then
-        echo "Validation successful: SparCC.py is working from any directory."
-    else
-        echo "Validation failed: SparCC.py is not accessible from any directory."
-    fi
-
-else
-    if git clone https://github.com/JCSzamosi/SparCC3.git /projects/$USER/SparCC3; then
-        echo "SparCC3 cloned successfully."
-        chmod +x "$SPARCC_DIR/SparCC.py"
-
-        if ! grep -qxF "export PATH=\$PATH:$SPARCC_DIR" ~/.bashrc; then
-            echo "export PATH=\$PATH:$SPARCC_DIR" >> ~/.bashrc
-            source ~/.bashrc
-            echo "The directory $SPARCC_DIR has been added to your PATH."
-        else
-            echo "The directory $SPARCC_DIR is already in your PATH."
-        fi
-
-        if command -v SparCC.py &> /dev/null; then
-            echo "Validation successful: SparCC.py is working from any directory."
-        else
-            echo "Validation failed: SparCC.py is not accessible from any directory."
-        fi
-
-    else
-        echo "Failed to clone SparCC3 repository. Please ensure you have permission."
-    fi
-fi
-
 ######################################################
 ## Setup QIIME2 2024.10 Module
 ######################################################
