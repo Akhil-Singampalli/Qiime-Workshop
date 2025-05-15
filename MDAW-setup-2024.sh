@@ -132,79 +132,11 @@ if [[ "$(hostname)" =~ ^login ]]; then
 else
   # code block to execute if string does not match regex pattern
 echo "You are not on a login node. Great choice! Now you can run different software modules."
-
 fi 
 
 #clean up any loaded modules
 module purge
 #load software module
-
-
-echo ""
-echo "#########################"
-echo "Setup SparCC3 software"
-echo "#########################"
-echo "#########################"
-echo ""
-
-
-SPARCC_DIR="/projects/$USER/SparCC3"
-# Check if SparCC.py exists within the directory
-if [ -f "$SPARCC_DIR/SparCC.py" ]; then
-    # Make SparCC.py executable
-    chmod +x "$SPARCC_DIR/SparCC.py"
-
-     # Add the directory to the PATH in .bashrc if not already added
-    if ! grep -qxF "export PATH=\$PATH:$SPARCC_DIR" ~/.bashrc; then
-        echo "export PATH=\$PATH:$SPARCC_DIR" >> ~/.bashrc
-        # Reload the .bashrc file to apply the changes to the current session
-        source ~/.bashrc
-        # Inform the user that the directory has been added to the PATH
-        echo "The directory $SPARCC_DIR has been added to your PATH."
-    else
-        echo "The directory $SPARCC_DIR is already in your PATH."
-    fi
-
-    # Validate that SparCC.py can be run from any directory
-    if command -v SparCC.py &> /dev/null; then
-        echo "Validation successful: SparCC.py is working from any directory."
-        echo "To use this, simply type \"SparCC.py\" "
-    else
-        echo "Validation failed: SparCC.py is not accessible from any directory. Please check the PATH configuration."
-    fi
-
-else
-    # Clone the SparCC3 directory to the user's projects directory
-    if git clone https://github.com/JCSzamosi/SparCC3.git /projects/$USER/SparCC3; then
-        echo "SparCC3 cloned successfully"
-        chmod +x "$SPARCC_DIR/SparCC.py"
-
-        # Add the directory to the PATH in .bashrc if not already added
-        if ! grep -qxF "export PATH=\$PATH:$SPARCC_DIR" ~/.bashrc; then
-            echo "export PATH=\$PATH:$SPARCC_DIR" >> ~/.bashrc
-            # Reload the .bashrc file to apply the changes to the current session
-            source ~/.bashrc
-            # Inform the user that the directory has been added to the PATH
-            echo "The directory $SPARCC_DIR has been added to your PATH."
-        else
-            echo "The directory $SPARCC_DIR is already in your PATH."
-        fi
-
-         # Validate that SparCC.py can be run from any directory
-        if command -v SparCC.py &> /dev/null; then
-            echo "Validation successful: SparCC.py is working from any directory."
-            echo "To use this, simply type \"SparCC.py\" "
-        else
-            echo "Validation failed: SparCC.py is not accessible from any directory. Please check the PATH configuration."
-        fi
-
-    else
-        echo "Failed to clone SparCC3 repository. Please make sure you have permission to clone repositories into /projects/$USER/."
-    fi
-    # echo "SparCC.py not found in $SPARCC_DIR. Please check the directory content."
-    # exit 1
-fi
-
 
 echo "#########################"
 echo "This is the end of the SETUP script."
